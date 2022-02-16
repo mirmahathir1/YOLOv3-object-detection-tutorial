@@ -14,6 +14,14 @@ except:
     print("Log directory read failed. Code will exit")
     sys.exit(0)
 
+checkpoint_period = None
+try:
+    checkpoint_period = int(sys.argv[2])
+    print(f"checkpoint period: {checkpoint_period}")
+except:
+    print("Valid checkpoint period not found. Code will exit")
+    sys.exit(0)
+
 """
 Retrain the YOLO model for your own dataset.
 """
@@ -55,7 +63,7 @@ def _main():
 
     logging = TensorBoard(log_dir=log_dir)
     checkpoint = ModelCheckpoint(log_dir + 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5',
-        monitor='val_loss', save_weights_only=True, save_best_only=True, period=3)
+        monitor='val_loss', save_weights_only=True, save_best_only=True, period=checkpoint_period)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1)
     early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1)
 
