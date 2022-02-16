@@ -1,7 +1,24 @@
+# reading log directory
+import sys
+import os
+log_directory = None
+try:
+    log_directory = sys.argv[1]
+    print(f"log directory: {log_directory}")
+    if not os.path.isdir(log_directory):
+        print("Log directory not found. Code will exit")
+        sys.exit(0)
+    else:
+        print(f"Log directory successfully detected. Model weights will be saved at {log_directory}")
+except:
+    print("Log directory read failed. Code will exit")
+    sys.exit(0)
+
 """
 Retrain the YOLO model for your own dataset.
 """
-import os
+
+
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import numpy as np
@@ -15,9 +32,11 @@ from yolo3.model import preprocess_true_boxes, yolo_body, tiny_yolo_body, yolo_l
 from yolo3.utils import get_random_data
 
 
+
+
 def _main():
     annotation_path = '4_CLASS_test.txt'
-    log_dir = 'logs/000/'
+    log_dir = log_directory
     classes_path = '4_CLASS_test_classes.txt'
     anchors_path = 'model_data/yolo_anchors.txt'
     class_names = get_classes(classes_path)
