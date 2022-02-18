@@ -30,6 +30,28 @@ except:
     print("Valid batch size not found")
     sys.exit(0)
 
+pretrained_model_directory = None
+try:
+    pretrained_model_directory = str(sys.argv[4])
+    if not os.path.isfile(pretrained_model_directory):
+        print(f"Pretrained weight file invalid")
+        sys.exit(0)
+    print(f"Pretrained model input: {pretrained_model_directory}")
+except:
+    print("Valid model not found")
+    sys.exit(0)
+
+freezing_epoch = 50
+try:
+    freezing_epoch = int(sys.argv[5])
+    if not 0 < freezing_epoch < 100:
+        print(f"Freezing epoch count must be between 0 and 100")
+        sys.exit(0)
+    print(f"Only the last layer will be frozen until epoch {freezing_epoch}")
+except:
+    print("valid freezing epoch not found")
+    sys.exit(0)
+
 """
 Retrain the YOLO model for your own dataset.
 """
@@ -63,10 +85,11 @@ def _main():
 
     is_tiny_version = len(anchors)==6 # default setting
     if is_tiny_version:
-        model = create_tiny_model(input_shape, anchors, num_classes,
-            freeze_body=2, weights_path='model_data/yolo_weights.h5')
+        # model = create_tiny_model(input_shape, anchors, num_classes,freeze_body=2, weights_path='model_data/yolo_weights.h5')
+        model = create_tiny_model(input_shape, anchors, num_classes,freeze_body=2, weights_path=pretrained_model_directory)
     else:
-        model = create_model(input_shape, anchors, num_classes, freeze_body=2, weights_path='model_data/yolo_weights.h5') # make sure you know what you freeze
+        # model = create_model(input_shape, anchors, num_classes, freeze_body=2, weights_path='model_data/yolo_weights.h5') # make sure you know what you freeze
+        model = create_model(input_shape, anchors, num_classes, freeze_body=2, weights_path=pretrained_model_directory) # make sure you know what you freeze
 
 
     logging = TensorBoard(log_dir=log_dir)
@@ -95,7 +118,7 @@ def _main():
                 steps_per_epoch=max(1, num_train//batch_size),
                 validation_data=data_generator_wrapper(lines[num_train:], batch_size, input_shape, anchors, num_classes),
                 validation_steps=max(1, num_val//batch_size),
-                epochs=10,
+                epochs=freezing_epoch,
                 initial_epoch=0,
                 callbacks=[logging, checkpoint])
         model.save_weights(log_dir + 'trained_weights_stage_1.h5')
@@ -115,7 +138,7 @@ def _main():
             validation_data=data_generator_wrapper(lines[num_train:], batch_size, input_shape, anchors, num_classes),
             validation_steps=max(1, num_val//batch_size),
             epochs=100,
-            initial_epoch=10,
+            initial_epoch=freezing_epoch,
             callbacks=[logging, checkpoint, reduce_lr, early_stopping])
         model.save_weights(log_dir + 'trained_weights_final.h5')
 
